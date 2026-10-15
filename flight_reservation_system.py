@@ -1,5 +1,5 @@
 
-"""Flight reservation system used for the Lab 5 static analysis exercise."""
+"""Flight reservation system for the Lab 5 static analysis exercise."""
 
 import hashlib
 import logging
@@ -32,13 +32,11 @@ flights = {
     },
 }
 
-total_revenue = 0.0
 
-
-def bookFlightSeat(flight_no, passenger, luggage_weight=15, baggage_tags=None):
+def book_flight_seat(
+    flight_no, passenger, luggage_weight=15, baggage_tags=None
+):
     """Book one seat and record the booking."""
-    global total_revenue
-
     if baggage_tags is None:
         baggage_tags = []
 
@@ -60,36 +58,36 @@ def bookFlightSeat(flight_no, passenger, luggage_weight=15, baggage_tags=None):
         or not isinstance(luggage_weight, (int, float))
         or luggage_weight < 0
     ):
-        raise ValueError("Luggage weight must be a non-negative number.")
+        raise ValueError("Luggage weight must be non-negative.")
 
     flight["seats"] -= 1
     flight["is_full"] = flight["seats"] == 0
-    total_revenue += flight["fare"]
 
     baggage_tags.append(
-        f"Booked seat on flight {flight_no} for passenger {passenger} "
-        f"with baggage weight {luggage_weight}"
+        f"Flight {flight_no}: {passenger}, "
+        f"baggage weight {luggage_weight}"
     )
 
     logging.info("Seat booked on %s for %s", flight_no, passenger)
     return True
 
 
-def cancelBooking(flight_no):
-    """Cancel a booking by restoring one seat when possible."""
+def cancel_booking(flight_no):
+    """Restore a seat on a known flight."""
     if flight_no not in flights:
-        logging.warning("Cannot cancel booking: unknown flight %s", flight_no)
+        logging.warning("Unknown flight: %s", flight_no)
         return False
 
     flight = flights[flight_no]
     flight["seats"] += 1
     flight["is_full"] = False
+
     logging.info("Seat restored on %s", flight_no)
     return True
 
 
-def checkSeatAvailability(flight_no):
-    """Return whether a flight has a seat available."""
+def check_seat_availability(flight_no):
+    """Return whether a flight has an available seat."""
     flight = flights.get(flight_no)
 
     if flight is None:
@@ -98,8 +96,8 @@ def checkSeatAvailability(flight_no):
     return not flight["is_full"] and flight["seats"] > 0
 
 
-def calculateBaggageFee(flight_no, surcharge_rate=0.15):
-    """Calculate the baggage surcharge using a validated rate."""
+def calculate_baggage_fee(flight_no, surcharge_rate=0.15):
+    """Calculate baggage surcharge using a validated rate."""
     if flight_no not in flights:
         raise ValueError(f"Unknown flight: {flight_no}")
 
@@ -114,21 +112,21 @@ def calculateBaggageFee(flight_no, surcharge_rate=0.15):
     return base_fare * surcharge_rate
 
 
-def generatePassengerHash(passenger_id):
-    """Return a SHA-256 digest for a passenger identifier."""
+def generate_passenger_hash(passenger_id):
+    """Return a SHA-256 digest of a passenger identifier."""
     if not isinstance(passenger_id, str) or not passenger_id:
         raise ValueError("Passenger identifier must not be empty.")
 
     return hashlib.sha256(passenger_id.encode("utf-8")).hexdigest()
 
 
-def generateBoardingPin():
-    """Generate a four-digit random boarding PIN."""
+def generate_boarding_pin():
+    """Generate a four-digit boarding PIN."""
     return secrets.randbelow(9000) + 1000
 
 
-def exportFlightManifest(filename="flight_manifest.txt"):
-    """Write the flight manifest to a file."""
+def export_flight_manifest(filename="flight_manifest.txt"):
+    """Write the flight manifest using safe file handling."""
     manifest_path = Path(filename)
 
     with manifest_path.open("w", encoding="utf-8") as manifest_file:
@@ -137,8 +135,8 @@ def exportFlightManifest(filename="flight_manifest.txt"):
     logging.info("Flight manifest saved to %s", manifest_path)
 
 
-def getFlightSummary(flight_data):
-    """Count flights with available seats."""
+def get_flight_summary(flight_data):
+    """Count flights that have available seats."""
     return sum(
         1
         for details in flight_data.values()
@@ -147,17 +145,20 @@ def getFlightSummary(flight_data):
 
 
 def main():
-    """Run a small demonstration of the flight reservation system."""
-    bookFlightSeat("AI101", "Kritika", 20)
-    cancelBooking("BA202")
+    """Run a demonstration of the flight reservation system."""
+    book_flight_seat("AI101", "Kritika", 20)
+    cancel_booking("BA202")
 
-    print("Is AI101 open:", checkSeatAvailability("AI101"))
-    print("Baggage Fee:", calculateBaggageFee("AI101"))
-    print("Passenger Hash:", generatePassengerHash("PASSPORT_IND_119"))
-    print("Boarding PIN:", generateBoardingPin())
+    print("Is AI101 open:", check_seat_availability("AI101"))
+    print("Baggage Fee:", calculate_baggage_fee("AI101"))
+    print(
+        "Passenger Hash:",
+        generate_passenger_hash("PASSPORT_IND_119"),
+    )
+    print("Boarding PIN:", generate_boarding_pin())
 
-    exportFlightManifest()
-    print("Available flights:", getFlightSummary(flights))
+    export_flight_manifest()
+    print("Available flights:", get_flight_summary(flights))
 
 
 if __name__ == "__main__":
